@@ -1,6 +1,7 @@
-using SegyIO, JUDI, SlimPlotting, Interpolations, Serialization, SourceEstimation, LinearAlgebra, JLD2
+using SegyIO, JUDI, SlimPlotting, Interpolations, Serialization, LinearAlgebra, JLD2
 close("all")
 data_path = "/data/galactic2D/"
+figpath = "./images/rtm-2405"
 linenum = 18
 include("utils.jl")
 
@@ -8,47 +9,52 @@ data, q = load_slice(linenum, "/data/galactic2D/GAL_FullArray_FFSig_Ver2_68pt5ms
 
 function image_shot(idx, d_obs, q, model, origin)
     # Get current shot and project geometry
-    newshot = get_data(d_obs[idx]; rel_origin=origin, project="2d")
-    newq = get_data(q[idx]; rel_origin=origin, project="2d")
-    Fq = judiFilter(newq, 3f0, 30f0)
-    newq = Fq * newq
-    # Setup operators with projected objects
-    opt = Options(subsampling_factor=6, IC="isic", limit_m=true, free_surface=true, space_order=16)  # ~40 GB of memory per source without subsampling
-    M = judiModeling(model, newq.geometry, newshot.geometry; options=opt)
-    # Inversion
-    # F = judiFilter(newshot, 3f0, 50f0)
-    J = judiJacobian(M, newq)
-    # d_syn = M*newq
-    # P, qest = estimate_source!(d_syn, F*newshot, newq; taperwidth=300, ntrace=50,  nt=300, lambda=1f-1, beta=1f-6)
+    newshot, newq = get_subset(data, q, origin, idx, 3f0, 40f0)
+    DG = judiTimeGain(newshot.geometry, 1) # t^2
+    Ml = judiDataMute(newq.geometry, newshot.geometry)
+    newshot = Ml*DG*newshot
+    # Normalize due to energy imbalances
+    newshot ./= norm(newshot, 2)
 
-    # r = P'*(d_syn - newshot)
-    # J = judiJacobian(M, qest)
-    I = judiIllumination(J; mode="v")
+    # Setup operators with projected objects
+    opt = Options(subsampling_factor=6, IC="isic", limit_m=true,
+                  free_surface=true, space_order=16)  # ~40 GB of memory per source without subsampling
+    M = judiModeling(model, newq.geometry, newshot.geometry; options=opt)
+
+    # Imaging
+    J = judiJacobian(M, newq)
+    I = judiIllumination(J; mode="uv")
     rtm = J'*newshot
     
-    return rtm, I.illums["v"]
+    return rtm, I.illums["v"], I.illums["u"]
 end
 
 
-start_vp = "$(data_path)galactic-A85-StartVp.sgy"
-xwi_vp = "$(data_path)galactic-A85-CP00054-Vp.sgy"
+start_vp = "$(data_path)galactic-StartVp-0524.sgy"
+xwi_vp = "$(data_path)galactic-CP00054-Vp-0524.sgy"
 
-for (vp, name) in [(start_vp, "xwi_start"), (xwi_vp, "xwi_54")]
+for (vp, name) in [(xwi_vp, "xwi_54"), (start_vp, "xwi_start")]
 
     model, originm  = read_model("$(data_path)W22GAL_LINE$(linenum)_FTPreSTM_MigVel.segy"; d=12.5,
                                 vals=vp)
 
+    wb = find_water_bottom(model.m, 1.6^(-2))
+    Tm = judiTopmute(model.n, wb, 0)
+
     rtm = similar(model.m)
     fill!(rtm, 0)
-    Il = similar(model.m)
-    fill!(Il, 0.)
+    Ilu = similar(model.m)
+    fill!(Ilu, 0.)
+    Ilv = similar(model.m)
+    fill!(Ilv, 0.)
 
-    filename = "$(data_path)rtm_line_18_$(name)_125.bin"
+    filename = "$(data_path)rtm_line_18_0524_$(name)_125.bin"
 
     if isfile(filename)
-        rtm, _, dloc, oloc, Il, iter = deserialize(filename)
+        rtm, _, dloc, oloc, Ilu, Ilv, iter = deserialize(filename)
         rtm = PhysicalParameter(rtm, dloc, oloc)
-        Il = PhysicalParameter(Il, dloc, oloc)
+        Ilu = PhysicalParameter(Ilu, dloc, oloc)
+        Ilv = PhysicalParameter(Ilv, dloc, oloc)
         iter += 1
     else
         iter = 1
@@ -57,12 +63,20 @@ for (vp, name) in [(start_vp, "xwi_start"), (xwi_vp, "xwi_54")]
     for i=iter:data.nsrc
         flush(stdout)
         t1 = @elapsed begin
-            rtm_loc, Il_loc = image_shot(i, data, q, model, originm)
+            rtm_loc, Ilu_loc, Ilv_loc = image_shot(i, data, q, model, originm)
+            rtm_loc = Tm * rtm_loc
             rtm .+= rtm_loc
-            Il .+= Il_loc
-            serialize(filename, (rtm=rtm.data, m=model.m.data, spacing=rtm.d, origin=rtm.o, Il=Il.data, iter=i))
+            Ilu .+= Ilu_loc
+            Ilv .+= Ilv_loc
+            serialize(filename, (rtm=rtm.data, m=model.m.data, spacing=rtm.d, origin=rtm.o,
+                                 Ilu=Ilu.data, Ilv=Ilv.data, iter=i))
         end
         println("Shot $(i) of $(data.nsrc) in: $(trunc(t1; digits=3)) s")
+
+        # Plot every 200 sources
+        if (i % 200) == 0 | i == data.nsrc
+            include("plot_images.jl")
+        end
     end
 
 end

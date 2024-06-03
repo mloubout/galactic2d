@@ -13,19 +13,18 @@ include("utils.jl")
 
 # Model and origin
 model0, origin  = read_model("$(data_path)W22GAL_LINE$(linenum)_FTPreSTM_MigVel.segy"; d=12.5,
-                              vals="$(data_path)galactic-A85-CP00054-Vp.sgy", density=true);
+                              vals="$(data_path)galactic-CP00054-Vp-0524.sgy", density=true);
 
+wb = find_water_bottom(model0.m, 1.6^(-2))
 # OOC data
 data, q = load_slice(linenum, "$(data_path)GAL_FullArray_FFSig_Ver2_68pt5ms_0pt5ms.sgy")
 
 offsets = -1500f0:spacing(model0, 1):1500f0
 
 function image_shot(idx, d_obs, q, model)
+    GC.gc(true)
     # Get current shot and project geometry
-    newshot = get_data(d_obs[idx]; rel_origin=origin, project="2d")
-    newq = get_data(q[idx]; rel_origin=origin, project="2d")
-    Fq = judiFilter(newq, 3f0, 30f0)
-    newq = Fq * newq
+    newshot, newq = get_subset(data, q, origin, idx, 5f0, 40f0; normalize=true)
 
     DG = judiTimeGain(newshot.geometry, 1) # t^2
     Ml = judiDataMute(newq.geometry, newshot.geometry)
@@ -37,7 +36,11 @@ function image_shot(idx, d_obs, q, model)
     M = judiModeling(model, newq.geometry, newshot.geometry; options=opt)
     # Inversion
     J = judiJacobian(M, newq, 64, newshot; offsets=offsets, mode=:QR)
+    # Mute water layer
     sso = J'*newshot
+    for i=1:size(model, 2)
+        sso[:, :, 1:wb[i]] .=0
+    end
 
     return sso
 end
@@ -64,10 +67,10 @@ function plot_current(sso)
     figure(figsize=(30, 12));
     plot_simage(sso.data[nh, 1:lasti_sso, :]', d;
                 cmap=cmap, d_scale=1.25, perc=perc, new_fig=false)
-    savefig("images/sso/SSO_xwi_novp", bbox_inches = "tight", dpi = 150)
+    savefig("images/sso-norm/SSO_xwi_novp", bbox_inches = "tight", dpi = 150)
     plot_velocity(vpplot[1:lasti_sso, 1:nz]', d; cmap=vcmap, perc=perc,
                   new_fig=false, alpha=.5, vmax=vp_max)
-    savefig("images/sso/SSO_xwi", bbox_inches = "tight", dpi = 150)
+    savefig("images/sso-norm/SSO_xwi", bbox_inches = "tight", dpi = 150)
 
 
     rtm = sso.data[nh, 1:lasti_sso, :]
@@ -76,32 +79,30 @@ function plot_current(sso)
 
     fig, axs = subplots(2, 2, figsize=(30, 12), gridspec_kw=Dict(:height_ratios=>[1, 3], :width_ratios=>[3, 1]))
     sca(axs[1, 1])
-    plot_simage(ogz, d; new_fig=false, name="", o=(h0, 0), labels=(:X, :Offset), cmap=seiscm(:seismic), d_scale=0, perc=perc)
+    plot_simage(ogz, d; new_fig=false, name="", o=(h0, 0), labels=(:X, :Offset), cmap=cmap, d_scale=0, perc=perc)
     hlines(y=0, colors=:b, xmin=0, xmax=(n[1]-1)*d[1], linewidth=1)
     vlines(x=(ix-1)*d[1], colors=:b, ymin=h0, ymax=-h0, linewidth=1)
     axs[1, 1].set_xticks([])
     axs[2, 2].set_xlabel("")
     sca(axs[2, 1])
-    plot_simage(rtm', d; new_fig=false, name="", cmap=seiscm(:seismic), d_scale=1.25, perc=perc)
+    plot_simage(rtm', d; new_fig=false, name="", cmap=cmap, d_scale=1.25, perc=perc)
     vlines(x=(ix-1)*d[1], colors=:b, ymin=0, ymax=(n[2]-1)*d[2], linewidth=1)
     hlines(y=(iz-1)*d[2], colors=:b, xmin=0, xmax=(n[1]-1)*d[1], linewidth=1)
     sca(axs[2, 2])
-    plot_simage(ogx', d; new_fig=false, name="", o=(0, h0), labels=(:Offset, :Depth), cmap=seiscm(:seismic), d_scale=0, perc=perc)
+    plot_simage(ogx', d; new_fig=false, name="", o=(0, h0), labels=(:Offset, :Depth), cmap=cmap, d_scale=0, perc=perc)
     vlines(x=0, colors=:b, ymin=0, ymax=(n[2]-1)*d[2], linewidth=1)
     hlines(y=(iz-1)*d[2], colors=:b, xmin=h0, xmax=-h0, linewidth=1)
     axs[2, 2].set_yticks([])
     axs[2, 2].set_ylabel("")
     axs[1, 2].set_visible(false)
     subplots_adjust(wspace=0, hspace=0)
-    savefig("images/sso/SSO_xwi_ofs", dpi=150, bbox_inches=:tight)
-
-
+    savefig("images/sso-norm/SSO_xwi_ofs", dpi=150, bbox_inches=:tight)
+    close("all")
 end
-
 
 batchsize = try nworkers();catch e 1 end
 
-save_file = "$(data_path)sso_line_18.bin"
+save_file = "$(data_path)sso_p64_line_18_0524_norm.bin"
 
 if isfile(save_file)
     sso, dloc, oloc, offsets, iter = deserialize(save_file)

@@ -113,12 +113,16 @@ function load_slice(linenum, wavelet::String; t=nothing)
     return data, q
 end
 
-function get_subset(data, q, origin, idx, f0=3f0, f1=30f0)
+function get_subset(data, q, origin, idx, f0=3f0, f1=30f0; normalize=false)
     newq = get_data(q[idx]; rel_origin=origin, project="2d")
     newshot = get_data(data[idx]; rel_origin=origin, project="2d")
     Fq = judiFilter(newq, f0, f1)
     Fd = judiFilter(newshot, f0, f1)
     newq = Fq * newq
     newshot = Fd * newshot
+    if normalize
+        newq ./= map(norm, newq)
+        newshot ./= map(norm, newshot)
+    end
     return newshot, newq
 end
