@@ -1,4 +1,4 @@
-using LinearAlgebra, Interpolations, JUDI, SegyIO, JLD2
+using LinearAlgebra, Interpolations, JUDI, SegyIO, JLD2, ImageFiltering
 
 export read_model, get_subset, nx, load_slice
 

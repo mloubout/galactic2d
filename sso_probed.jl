@@ -13,11 +13,11 @@ include("utils.jl")
 
 # Model and origin
 model0, origin  = read_model("$(data_path)W22GAL_LINE$(linenum)_FTPreSTM_MigVel.segy"; d=12.5,
-                              vals="$(data_path)galactic-CP00054-Vp-0524.sgy", density=true);
+                              vals="$(data_path)galactic-CP00054-Vp-0524.sgy")
 
 wb = find_water_bottom(model0.m, 1.6^(-2))
 # OOC data
-data, q = load_slice(linenum, "$(data_path)GAL_FullArray_FFSig_Ver2_68pt5ms_0pt5ms.sgy")
+data, q = load_slice(linenum, "$(data_path)GAL_FullArray_FFSig_Ver2_68pt5ms_0pt5ms.sgy"; t=7500f0)
 
 offsets = -1500f0:spacing(model0, 1):1500f0
 
@@ -102,7 +102,7 @@ end
 
 batchsize = try nworkers();catch e 1 end
 
-save_file = "$(data_path)sso_p64_line_18_0524_norm.bin"
+save_file = "$(data_path)sso_p64_line_18_0524.bin"
 
 if isfile(save_file)
     sso, dloc, oloc, offsets, iter = deserialize(save_file)
@@ -117,9 +117,10 @@ else
 end
 
 nsrc_sso = data.nsrc
+idxsrc = vcat(collect.(i:100:data.nsrc for i in 1:100)...)
 
 for i=iter:batchsize:nsrc_sso
-    idx = i:(i+batchsize-1)
+    idx = idxsrc[i:(i+batchsize-1)]
     flush(stdout)
     t1 = @elapsed begin
         sso_loc = image_shot(idx, data, q, model0)
@@ -127,5 +128,5 @@ for i=iter:batchsize:nsrc_sso
         serialize(save_file, (sso=sso.data, spacing=sso.d, origin=sso.o, offsets=offsets, iter=i))
         plot_current(sso)
     end
-    println("Shot ($(idx[1])-$(idx[end])) of $(data.nsrc) in: $(trunc(t1; digits=3)) s")
+    println("Shot ($(i)-$(i+batchsize-1)) of $(data.nsrc) in: $(trunc(t1; digits=3)) s")
 end

@@ -1,4 +1,4 @@
-using SegyIO, Serialization, SlimPlotting, JUDI
+using SegyIO, Serialization, SlimPlotting, JUDI, Interpolations, ImageFiltering
 
 close("all")
 
@@ -9,14 +9,29 @@ data_path = "/data/galactic2D/"
 figpath = "./images/rtm-2405"
 
 model, origin  = read_model("$(data_path)W22GAL_LINE$(linenum)_FTPreSTM_MigVel.segy")
+segyvel = "$(data_path)galactic-CP00054-Vp-0524.sgy"
 
 rtm_start = "$(data_path)rtm_line_18_0524_xwi_start_125.bin"
 rtm_xwi_125 = "$(data_path)rtm_line_18_0524_xwi_54_125.bin"
 
-cmap = "cet_CET_L2" #seiscm(:seismic)
+cmap = seiscm(:seismic)
 vcmap = "cet_rainbow4"
-perc = 95
+perc = 98
 vp_max = 5.0
+
+if isfile("datanorms")
+    normsd = deserialize("datanorms")
+    norms = normsd.norms
+else
+    data, q = load_slice(linenum, "/data/galactic2D/GAL_FullArray_FFSig_Ver2_68pt5ms_0pt5ms.sgy")
+
+    norms = [norm(get_data(data[i])) for i=1:data.nsrc]
+    itp = LinearInterpolation(range(0, 1, length=data.nsrc), norms, extrapolation_bc=Line())
+    norms = itp(range(0, 1, length=model.n[1]))
+    serialize("datanorms", (norms=norms,))
+end
+
+norms = imfilter(norms, Kernel.gaussian((5,)))
 
 names = ("start", "xwi-54-125")
 rtms = (rtm_start, rtm_xwi_125)
@@ -25,9 +40,13 @@ for (resname, name) in zip(rtms, names)
     !isfile(resname) && continue
     res = deserialize(resname)
     rtm, Ilu, Ilv, spacing = res.rtm, res.Ilu, res.Ilv, reverse(res.spacing)
-    Il =  Ilu .* Ilv
+    Il = Ilu .* Ilv
 
     vp = res.m.^(-.5)
+    wb = find_water_bottom(res.m, 1.6^(-2))
+    Tm = judiTopmute(model.n, wb, 0)
+
+    rtm = Tm * rtm
 
     nz = size(vp, 2)
     lasti = size(vp, 1)
@@ -35,7 +54,8 @@ for (resname, name) in zip(rtms, names)
 
     # Illum
     @show extrema(Il[startx:lasti+startx-1, 1:nz])
-    plot_velocity(1 ./ Il[startx:lasti+startx-1, 1:nz]', spacing; cmap="hsv", d_scale=0, name="", cbar=true)
+    figure(figsize=(30, 12));
+    plot_velocity(log.(1 .+ Il[startx:lasti+startx-1, 1:nz])', spacing; cmap="gist_ncar", d_scale=0, name="", cbar=true, new_fig=false)
     savefig("$(figpath)/illum_$(name)", bbox_inches = "tight", dpi = 150)
 
     # RTMs
@@ -48,7 +68,7 @@ for (resname, name) in zip(rtms, names)
     plot_simage((rtm[startx:lasti+startx-1, 1:nz])' ./ (Il[startx:lasti+startx-1, 1:nz]' .+ 1e-6), spacing;
                  cmap=cmap, d_scale=0, perc=perc,  new_fig=false, name="")
     savefig("$(figpath)/RTM_$(name)_novp", bbox_inches = "tight", dpi = 150)
-    plot_velocity(vp[1:lasti, 1:nz]', spacing; cmap=vcmap, perc=perc, new_fig=false, alpha=.5, vmax=vp_max, name="RTM $(name)")
+    plot_velocity(vp[1:lasti, 1:nz]', spacing; cmap=vcmap, perc=perc, new_fig=false, alpha=.5, vmax=vp_max, name="")
     savefig("$(figpath)/RTM_$(name)", bbox_inches = "tight", dpi = 150)
     close("all")
 
@@ -56,16 +76,19 @@ for (resname, name) in zip(rtms, names)
     dvp[1:lasti, 2:nz] .= diff(vp[1:lasti, 1:nz], dims=2) ./ vp[1:lasti, 2:nz]
     figure(figsize=(30, 12));
     plot_simage(dvp[1:lasti, 1:nz]', spacing;
-                 cmap=cmap, d_scale=0, perc=perc,  new_fig=false, name="")
+                cmap="cet_CET_L1", d_scale=0, perc=perc,  new_fig=false, name="", alpha=.5)
     savefig("$(figpath)/dvp$(name)_novp", bbox_inches = "tight", dpi = 150)
+    figure(figsize=(30, 12));
     plot_simage((rtm[startx:lasti+startx-1, 1:nz])' ./ (Il[startx:lasti+startx-1, 1:nz]' .+ 1e-6), spacing;
-                cmap=seiscm(:seismic), d_scale=0, perc=98,  new_fig=false, name="", alpha=.5)
+                cmap=seiscm(:seismic), d_scale=0, perc=99, new_fig=false, name="")
+    plot_simage(dvp[1:lasti, 1:nz]', spacing;
+                cmap="cet_CET_L1", d_scale=0, perc=perc,  new_fig=false, name="", alpha=.5)
     savefig("$(figpath)/dvp$(name)_overlap", bbox_inches = "tight", dpi = 150)
 
     # block = deepcopy(segy_read(segyvel))
     # nz, nx = size(block.data)
     # block.data[:, :] = rtm[1:nx, 1:nz]'
-    # segy_write("rtm_$(name)vel.segy", block)
+    # segy_write("$(figpath)/rtm_$(name)vel_2405.segy", block)
 
 end
 

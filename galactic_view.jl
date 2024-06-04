@@ -5,7 +5,7 @@ figpath = "./images/rtm-2405"
 linenum = 18
 include("utils.jl")
 
-data, q = load_slice(linenum, "/data/galactic2D/GAL_FullArray_FFSig_Ver2_68pt5ms_0pt5ms.sgy")
+data, q = load_slice(linenum, "/data/galactic2D/GAL_FullArray_FFSig_Ver2_68pt5ms_0pt5ms.sgy"; t=7500f0)
 
 function image_shot(idx, d_obs, q, model, origin)
     # Get current shot and project geometry
@@ -36,7 +36,7 @@ xwi_vp = "$(data_path)galactic-CP00054-Vp-0524.sgy"
 for (vp, name) in [(xwi_vp, "xwi_54"), (start_vp, "xwi_start")]
 
     model, originm  = read_model("$(data_path)W22GAL_LINE$(linenum)_FTPreSTM_MigVel.segy"; d=12.5,
-                                vals=vp)
+                                 vals=vp)
 
     wb = find_water_bottom(model.m, 1.6^(-2))
     Tm = judiTopmute(model.n, wb, 0)
@@ -60,7 +60,10 @@ for (vp, name) in [(xwi_vp, "xwi_54"), (start_vp, "xwi_start")]
         iter = 1
     end
 
-    for i=iter:data.nsrc
+    idxsrc = vcat(collect.(i:100:data.nsrc for i in 1:100)...)
+
+    for it=iter:data.nsrc
+        i = idxsrc[it]
         flush(stdout)
         t1 = @elapsed begin
             rtm_loc, Ilu_loc, Ilv_loc = image_shot(i, data, q, model, originm)
@@ -71,7 +74,7 @@ for (vp, name) in [(xwi_vp, "xwi_54"), (start_vp, "xwi_start")]
             serialize(filename, (rtm=rtm.data, m=model.m.data, spacing=rtm.d, origin=rtm.o,
                                  Ilu=Ilu.data, Ilv=Ilv.data, iter=i))
         end
-        println("Shot $(i) of $(data.nsrc) in: $(trunc(t1; digits=3)) s")
+        println("Shot $(it) of $(data.nsrc) in: $(trunc(t1; digits=3)) s")
 
         # Plot every 200 sources
         if (i % 200) == 0 | i == data.nsrc

@@ -20,13 +20,13 @@ wb = find_water_bottom(model.m, 1.6^(-2))
 Tm = judiTopmute(model.n, wb, 0)
 
 # OOC data
-data, q = load_slice(linenum, "$(data_path)GAL_FullArray_FFSig_Ver2_68pt5ms_0pt5ms.sgy")
+data, q = load_slice(linenum, "$(data_path)GAL_FullArray_FFSig_Ver2_68pt5ms_0pt5ms.sgy"; t=6000f0)
 
 C = joMECurvelet2D(model.n...; DDT=Float32, RDT=Float32, zero_finest=true)
 
 # Setup linearized bregman, one datapath
 niter = 50
-batchsize = div(data.nsrc, 25)
+batchsize = div(data.nsrc, 50)
 g_scale = 0
 
 # Setup operators
@@ -52,10 +52,13 @@ function obj(x)
     # Imaging
     M = judiModeling(model, qf.geometry, dobs.geometry; options=opt)
     J = judiJacobian(M, qf)
-    I = inv(judiIllumination(J; mode="v", k=1))
+    I = inv(judiIllumination(J; mode="uv", k=1))
 
-    dsyn = J*dm
-    residual = Ml*(dsyn - DG*dobs)
+    if norm(dm) > 0
+        residual = Ml*(J*dm - DG*dobs)
+    else
+        residual = -(Ml*DG*dobs)
+    end
     # grad
     G = Tm*I*(J'*Ml'*residual)
     g_scale == 0 && (global g_scale = .05f0/norm(G, Inf))
