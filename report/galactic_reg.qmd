@@ -5,18 +5,6 @@ bibliography: report.bib
 ---
 
 
-TODO:
-- More desctiption
-- Gatech
-- Redo figures
-- Make all the SEGY files and put on aws
-
-
-More data
-More on project description
-pdf is fine
-
-
 # Introduction
 
 This report presents the results of the 2023 Galactic 2D Seismic Imaging Study Phase 2b, conducted by Devito Codes Ltd (the Contractor) for Woodside Energy Ltd (the Company). The study aimed to benchmark the state of the art in seismic imaging using towed-streamer seismic data of limited quality acquired in shallow-water environments. The study focused on data-space compressive least-squares reverse-time migration (RTM) and full-waveform inversion (FWI) imaging, with a particular emphasis on the scalability of workflows based on the Contractor’s highly abstracted and easy-to-maintain codebases.
@@ -27,38 +15,67 @@ The following objectives and deliverables were agreed upon in the Statement of W
 
 ## Contributions
 
-**DevitoCodes**:
+**DevitoCodes**: Mathias Louboutin, Fabio Luporini, Gerard Gorman
 
 - Impedance imaging of Line 18
 - Subsurface offset gathers for Line 18
 
-**Georgia Institute of Technology**:
+**Georgia Institute of Technology**: Felix J. Herrmann
 
 - LSPSRTM of line 18
 - Migration of 20 lines with provided time-migration models
 - Preparation for training generative network based on RTMs and wells
 
+**Woodside**: Henry Debens, Robert Eliott-Lockhart
+
+- Objectives design and line selection 
+- Dataset and model description, source preparation
+- Bi-weekly progress discussions
+- Results validation
+
 ## Data
 
-The data consist of 32 lines. We processed line 18. 
+The data consist of 32 lines. We processed line 18 that was decided to be the line of interest. Line 21 was the secondary objective but wasn not processed in time.
 
 # Data processing
 
+We applied standard  data processing workflow in order to guarantee quality images of the subsurface. Those processing steps are generally  considered standard for any field data processing workflow. The  survey consists of 32 sailines available in one SEG-Y file per line. In addition, some legacy stacks and models were provided:
+
+- A pres-stack time-migration model for each line,. We observed that the header of those models is likely to be incorrect as the time-sampling had to be doubled to obtain acceptable time-to-depth converted models. Those models were only use as initial migration model to get an idea of the subsurface but were later on replaced by models derived from wells and horizons.
+
+- Time-grated stacks. The dataset came with some migrated lines. Those migrated images were however not used and instead RTMs were generated with the time-migration velocity models. Despite inaccurate travel times, those RTMs are higher quality in term of focusing and horizon continuity for the given velocities. We provide those migrated images for references that were intended to be used to train generative networks.
+
 ## Source wavelet
 
-The wavelet provided with the dataset was used for all imaging procedures. The wavelet was filtered to a [3Hz, 40Hz] frequency band using a causal Butterworth filter of order 5 and shifted by 50ms to match the data acquisition time shift.
+The wavelet provided with the dataset was used for all imaging procedures. The wavelet was filtered to a [3Hz, 40Hz] frequency band using a causal Butterworth filter of order 5 and shifted by 50ms to match the data acquisition time shift. We found the provided wavelet to accurately match the direct wave and first arrival for a broad range of frequency [3Hz-60Hz] and therefore decided new source estimation was not necessary.
 
 ## Deblending correction
 
-The dataset was truncated to 9 seconds recording out of the 10  second of available data due to debelnding artifacts in the tail end of the shot record for over 50% of the shots in ine 18. 
+The dataset was truncated to 9 seconds recording out of the 10 second of available data due to deblending artifacts in the tail end of the shot record for over 50% of the shots in ine 18. We show in @fig-data the deblending artifact at the tail end of the shot record for illustration.
+
+
+::: {#fig-rtmc-init layout-nrow=2}
+
+![](./figures/data-arti.png)
+
+
+Deblending artifact. The next short record can be seen starting at about 9.5sec leading to erroneous processing and imaging.
+:::
+
+Since there is very limited energy at later arrival and with the presence of string multiples, truncating the last second of recording leads to negligible loss in inversion and imaging accuracy.
 
 ## Filtering
 
-The data qas filtered between 3 Hz and 40 Hz to remove strong low frequency noise. We used a causal Butterworth filter fo order 5 to match the source filtering.
+The data qas filtered between 3 Hz and 40 Hz to remove strong low frequency noise. We used a causal Butterworth filter fo order 5 to match the source filtering. The dataset show good quality data and near zero noise after low pass filtering. THe quality of the filtered data is expected to lead to noise free images of the subsurface and out imaging workflow confirmed this observation.
 
 ## 2D correction
 
-Amplitude correction was performed on the field data for 2D imaging. A time gain of ordre one was applied to all traces with a 50ms shift to compensate for the recording 50ms delay in the data.
+Amplitude correction was performed on the field data for 2D imaging. A time gain of order one was applied to all traces with a 50ms shift to compensate for the recording 50ms delay in the data.  This is a conventional processing step and was therefore automatically applied to all experiments.
+
+**Main objective**
+
+The main objective of this project was to obtain subsurface im impedance images through RTM, LSRTM and subsurface offset imaging. All three worlflows were successfully ran and provided interpretable insights.
+
 
 # Imaging
 
@@ -87,9 +104,7 @@ Base on these inital results, it was clear the multiple steps are necessary for 
 
 - 2) Due to the shallow water environment, strong multiples are present in the datasets.  All work was done incorporating those multiples into the inversion (FWI) and imaging (RT, CIGs) processes. However, in order to obtain high quality images, future processing may require either multiple elimination workflows (i.e. SRME/, REPSI, ...) or more complex physics, namely elastic isotopic, to accurately model the shallow ocean bottom reflections and multiples.
 
-
 # Final velocity model
-
 
 The initial model used for this final result is once again obtained from the checkshot and horizons, howver modification have been made to be less reliant on the known inaccurate time migration images. 
 
@@ -97,7 +112,7 @@ The subsurface impedance image from this initial checkshot model is shown below.
 
 ::: {#fig-rtmc-final layout-nrow=2}
 
-![](./figures/final/RTM_start_novp_0524.png)
+![](./figures/final/RTM_start_novp.png)
 
 ![](./figures/final/RTM_start.png)
 
@@ -105,23 +120,25 @@ Impedance imaging in the final checkshot velocity model.
 :::
 
 
-We now show the image obtained with the final FWI velocity model. We display drastic improvement in focusing and continuity over the section and the noise in the deeper part of the section is greatly reduced. The main even at 4km depth is now well resolved and continuous. The shallow section is also much better focused and continuous. The impedance image is now lining up with the velocity model below 2km depth. We can however, as expected, see an imprint of the multiples below 4km with ringing and repeated events. We expect to improve on these features in the future with more advanced physics and multiple elimination methods.
+We now show the image obtained with the final FWI velocity model and make two main observations; First, the main horizon at 4km depth is more focused and continuous for the left 40km of the model. The string reflectors at 1km and 1.5km are now continuous accross the full model and the faults at 35km and 60km are very well resolved. On another hand, we observe and overall decrease in focusing and an increase in artifacts in the image. In particular, the horizon at 4km depth losses structure starting at 40km and we observe a lot of ringing artifact between 70km and 90km likely to be multiple-related.
+
 
 ::: {#fig-rtmc-v-final layout-nrow=2}
 
-![](./figures/final/RTM_xwi-54-125_novp_0524.png)
+![](./figures/final/RTM_xwi-54-125_novp.png)
 
 ![](./figures/final/RTM_xwi-54-125.png)
 
 Impedance imaging in the final inverted velocity model.
 :::
 
+Based on this image, the velocity model obtained with FWI is likely to be polluted by the multiples and the smooth initial model leads to less artifacts from misplaced or duplicated reflectors in the hard final background model. Imaging in a smoothed version of the final model could lead to better subsurface image and would have been the next step in analyzing the quality of the inverted velocity.
+
 # Sparsity Promoting LSRTM
 
-Model-space sparsity promoting least square migration is an iterative imaging methods that uses the Linearized Bregman algorithm with the Curvelet transform as a sparsifying transform. The algorithm is designed to use a small subset of the dataset at each iteration leading to a total imaging cost equivalent to a single RTM. We intend to show that this advanced method leads to accurate true amplitude subsurface image at a reasonable computational cost.
+Model-space sparsity promoting least square migration [@witte2017EAGEspl, @herrmann2009GEOPcbm] is an iterative imaging methods that uses the Linearized Bregman algorithm with the Curvelet transform as a sparsifying transform. The algorithm is designed to use a small subset of the dataset at each iteration leading to a total imaging cost equivalent to a single RTM. We intend to show that this advanced method leads to accurate true amplitude subsurface image at a reasonable computational cost.
 The data was processed with the steps described in the Data Processing section. In addition, we added a data muting to remove all turning waves from the field data using a water velocity of 1500m/s.
 
-put refs to precon paper and splsrtm paper
 
 ::: {#fig-lsrtm}
 
@@ -135,7 +152,7 @@ We see limited benefits of splsrtm based on this image, however, this result com
 # Common image gathers
 
 
-Subsurface offset gathers have been computed using random trace estimators [ref]. This method, introduced in [Probed] is a memory frugal but accurate way to compute adjoint based subsurface images such as Reverse Time Migration [RTM] and subsurface image gathers. The aim is to shoow that we can compute accurate CIGs with a method that requires little resources (very low memory) allowing for scaling to large subsurface area and high frequencies unlike traditional CIG methods and frameworks. The data was processed as described in the Data processing section and we computed the CIGs for a [3Hz, 40Hz] frequency band with 12.5m fine grain offset sampling for a total of 241 offsets.
+Subsurface offset gathers have been computed using random trace estimators [@timeprobe]. This method, introduced in [Probed] is a memory frugal but accurate way to compute adjoint based subsurface images such as Reverse Time Migration [RTM] and subsurface image gathers. The aim is to shoow that we can compute accurate CIGs with a method that requires little resources (very low memory) allowing for scaling to large subsurface area and high frequencies unlike traditional CIG methods and frameworks. The data was processed as described in the Data processing section and we computed the CIGs for a [3Hz, 40Hz] frequency band with 12.5m fine grain offset sampling for a total of 241 offsets.
 
 ## Checkshot gathers
 
@@ -150,7 +167,6 @@ Subsurface Offset Gather in the initial checkshot velocity model.
 :::
 
 ## Final gathers
-
 
 Finally, we computed the subsurface offset gather using low memory trace estimation (see ...) as with the inital checkshot model. As intended, the energy is much more focused around the zero offset hinting at a more kinematically accurate model. The events are well aligned and the gathers are well focused. The events are also well aligned with the impedance image and the velocity model. This is a clear indication that the final velocity model is much more accurate than the initial model and provides a much better image of the subsurface.
 
@@ -248,12 +264,12 @@ Below is the table of delivered data for the Galactic 2D project. All data made 
 
 : Deliverables
 
-ewrgd
 
-# References
+### References
 
+::: {#refs}
+:::
 
-https://library.seg.org/doi/epub/10.1190/1.3124753
 
 
 [JUDI]: https://github.com/slimgroup/JUDI.jl

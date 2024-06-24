@@ -1,0 +1,45 @@
+@article{timeprobe,
+author = {Louboutin, Mathias and Herrmann, Felix J.},
+title = {Wave-based inversion at scale on graphical processing units with randomized trace estimation},
+journal = {Geophysical Prospecting},
+volume = {72},
+number = {2},
+pages = {353-366},
+keywords = {full-waveform inversion, finite differences, inversion, reverse-time migration, stochastic},
+doi = {https://doi.org/10.1111/1365-2478.13405},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1111/1365-2478.13405},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1111/1365-2478.13405},
+abstract = {Abstract Thanks to continued performance improvements in software and hardware, wave-equation-based imaging technologies, such as full-waveform inversion and reverse-time migration, are becoming more commonplace. However, widespread adaptation of these advanced imaging modalities has not yet materialized because current implementations are not able to reap the full benefits from accelerators, in particular those offered by memory-scarce graphics processing units. Through the use of randomized trace estimation, we overcome the memory bottleneck of this type of hardware. At the cost of limited computational overhead and controllable incoherent errors in the gradient, the memory footprint of adjoint-state methods is reduced drastically. Thanks to this relatively simple to implement memory reduction via an approximate imaging condition, we are able to benefit from graphics processing units without memory offloading. We demonstrate the performance of the proposed algorithm on acoustic two- and three-dimensional full-waveform inversion examples and on the formation of image gathers in transverse tilted isotropic media.},
+year = {2024}
+}
+
+
+@article {herrmann2009GEOPcbm,
+	title = {Curvelet-based migration preconditioning and scaling},
+	journal = {Geophysics},
+	volume = {74},
+	year = {2009},
+	month = {07-08},
+	pages = {A41-A46},
+	abstract = {The extremely large size of typical seismic imaging problems has been one of the major stumbling blocks for iterative techniques to attain accurate migration amplitudes. These iterative methods are important because they complement theoretical approaches that are hampered by difficulties to control problems such as finite-acquisition aperture, source-receiver frequency response, and directivity. To solve these problems, we apply preconditioning, which significantly improves convergence of least-squares migration. We discuss different levels of preconditioning that range from corrections for the order of the migration operator to corrections for spherical spreading, and position and reflector-dip dependent amplitude errors. While the first two corrections correspond to simple scalings in the Fourier and physical domain, the third correction requires phase-space (space spanned by location and dip) scaling, which we carry out with curvelets. We show that our combined preconditioner leads to a significant improvement of the convergence of least-squares {\textquoteleft}wave-equation{\textquoteright} migration on a line from the SEG AA{\textquoteright} salt model.},
+	keywords = {Imaging, migration, SLIM},
+	doi = {10.1190/1.3124753},
+	url = {http://geophysics.geoscienceworld.org/content/74/4/A41.abstract},
+	url2 = {https://slim.gatech.edu/Publications/Public/Journals/Geophysics/2009/herrmann2009GEOPcbm/herrmann2009GEOPcbm.pdf},
+	author = {Felix J. Herrmann and Cody R. Brown and Yogi A. Erlangga and Peyman P. Moghaddam}
+}
+
+@conference {witte2017EAGEspl,
+	title = {Sparsity-promoting least-squares migration with the linearized inverse scattering imaging condition},
+	booktitle = {EAGE Annual Conference Proceedings},
+	year = {2017},
+	note = {(EAGE, Paris)},
+	month = {06},
+	abstract = {Reverse-time migration (RTM) with the conventional cross-correlation imaging condition suffers from low-frequency artifacts that result from backscattered energy in the background velocity models. This problem translates to least-squares reverse-time migration (LS-RTM), where these artifacts slow down the convergence, as many of the initial iterations are spent on removing them. In RTM, this problem has been successfully addressed by the introduction of the so-called inverse scattering imaging condition, which naturally removes these artifacts. In this work, we derive the corresponding linearized forward operator of the inverse scattering imaging operator and incorporate this forward/adjoint operator pair into a sparsity-promoting (SPLS-RTM) workflow. We demonstrate on a challenging salt model, that LS-RTM with the inverse scattering imaging condition is far less prone to low-frequency artifacts than the conventional cross-correlation imaging condition, improves the convergence and does not require any type of additional image filters within the inversion. Through source subsampling and sparsity promotion, we reduce the computational cost in terms of PDE solves to a number comparable to conventional RTM, making our workflow applicable to large-scale problems.},
+	keywords = {EAGE, imaging condition, least-squares migration, linearized Bregman},
+	doi = {10.3997/2214-4609.201701125},
+	url = {https://slim.gatech.edu/Publications/Public/Conferences/EAGE/2017/witte2017EAGEspl/witte2017EAGEspl.html},
+	presentation = {https://slim.gatech.edu/Publications/Public/Conferences/EAGE/2017/witte2017EAGEspl/witte2017EAGEspl_poster.pdf},
+	author = {Philipp A. Witte and Mengmeng Yang and Felix J. Herrmann}
+}
+
