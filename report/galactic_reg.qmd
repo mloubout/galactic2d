@@ -1,0 +1,262 @@
+---
+author: Devito Codes Ltd
+title: Final report, 2023 Galactic 2D Seismic Imaging Study Phase 2b
+bibliography: report.bib
+---
+
+
+TODO:
+- More desctiption
+- Gatech
+- Redo figures
+- Make all the SEGY files and put on aws
+
+
+More data
+More on project description
+pdf is fine
+
+
+# Introduction
+
+This report presents the results of the 2023 Galactic 2D Seismic Imaging Study Phase 2b, conducted by Devito Codes Ltd (the Contractor) for Woodside Energy Ltd (the Company). The study aimed to benchmark the state of the art in seismic imaging using towed-streamer seismic data of limited quality acquired in shallow-water environments. The study focused on data-space compressive least-squares reverse-time migration (RTM) and full-waveform inversion (FWI) imaging, with a particular emphasis on the scalability of workflows based on the Contractor’s highly abstracted and easy-to-maintain codebases.
+
+# Project description
+
+The following objectives and deliverables were agreed upon in the Statement of Work (SOW) between Devito Codes Ltd (the Contractor) and Woodside Energy Ltd (the Company) for the 2023 Galactic 2D Seismic Imaging Study Phase 2b. 
+
+## Contributions
+
+**DevitoCodes**:
+
+- Impedance imaging of Line 18
+- Subsurface offset gathers for Line 18
+
+**Georgia Institute of Technology**:
+
+- LSPSRTM of line 18
+- Migration of 20 lines with provided time-migration models
+- Preparation for training generative network based on RTMs and wells
+
+## Data
+
+The data consist of 32 lines. We processed line 18. 
+
+# Data processing
+
+## Source wavelet
+
+The wavelet provided with the dataset was used for all imaging procedures. The wavelet was filtered to a [3Hz, 40Hz] frequency band using a causal Butterworth filter of order 5 and shifted by 50ms to match the data acquisition time shift.
+
+## Deblending correction
+
+The dataset was truncated to 9 seconds recording out of the 10  second of available data due to debelnding artifacts in the tail end of the shot record for over 50% of the shots in ine 18. 
+
+## Filtering
+
+The data qas filtered between 3 Hz and 40 Hz to remove strong low frequency noise. We used a causal Butterworth filter fo order 5 to match the source filtering.
+
+## 2D correction
+
+Amplitude correction was performed on the field data for 2D imaging. A time gain of ordre one was applied to all traces with a 50ms shift to compensate for the recording 50ms delay in the data.
+
+# Imaging
+
+The data was migrated with an isotropic acoustic model parametrized by P-wave velocity and density. The P-wave velocity was obtained with FWI by S-Cube (part of this project) and the density model derived using Gardner relationship from the velocity model. Density was set constant to 1 in the water layer for the entire line.
+
+## Initial checkshot velocity model
+
+The initial checkshot velocity model was used to generate the impedance image shown in @fig-rtmc-init. The subsurface offset gathers obtained with this model are shown in @fig-ssoc-init later on. The velocity model was obtained from the provided checkshot `Checkshots_NTP86_Area.xlsx` and mapping the velocity values to the horizons extracted from the legacy time migration images. The processing of the checkshot data and the generation of the velocity model was done by S-Cube and provided to us.
+
+We clearly see the limitations of the initial model in the impedance image and the subsurface offset gathers. The impedance image is no lining up with the velocity model below 2km depth. The subsurface offset gathers are not well focused and the events are not well aligned.
+
+
+::: {#fig-rtmc-init layout-nrow=2}
+
+![](./figures/cshot-init/RTM_cshot_novp.png)
+
+![](./figures/cshot-init/RTM_cshot.png)
+
+Impedance imaging and overlapped with the initial checkshot velocity model.
+:::
+
+
+Base on these inital results, it was clear the multiple steps are necessary for the processing of this dataset.
+
+- 1) First an end-to-end FWI inversion of the velocity model is necessary to provide a more accurate background model. A first iteration of FWI was performed based on an acoustic isotropic model. While not very accurate, the resulting velocity should prove much better insight and lead to more accurate and interpretable images of the subsurface.
+
+- 2) Due to the shallow water environment, strong multiples are present in the datasets.  All work was done incorporating those multiples into the inversion (FWI) and imaging (RT, CIGs) processes. However, in order to obtain high quality images, future processing may require either multiple elimination workflows (i.e. SRME/, REPSI, ...) or more complex physics, namely elastic isotopic, to accurately model the shallow ocean bottom reflections and multiples.
+
+
+# Final velocity model
+
+
+The initial model used for this final result is once again obtained from the checkshot and horizons, howver modification have been made to be less reliant on the known inaccurate time migration images. 
+
+The subsurface impedance image from this initial checkshot model is shown below. The continuity and sharpness of the events imaged in the subsurface are clearly improved compared to the model at the start of the project. The main event at 4km depth is continuous and well resolved. However, the shallow section lacks focusing and continuity and the deeper part (below 4km) os very noisy.
+
+::: {#fig-rtmc-final layout-nrow=2}
+
+![](./figures/final/RTM_start_novp_0524.png)
+
+![](./figures/final/RTM_start.png)
+
+Impedance imaging in the final checkshot velocity model.
+:::
+
+
+We now show the image obtained with the final FWI velocity model. We display drastic improvement in focusing and continuity over the section and the noise in the deeper part of the section is greatly reduced. The main even at 4km depth is now well resolved and continuous. The shallow section is also much better focused and continuous. The impedance image is now lining up with the velocity model below 2km depth. We can however, as expected, see an imprint of the multiples below 4km with ringing and repeated events. We expect to improve on these features in the future with more advanced physics and multiple elimination methods.
+
+::: {#fig-rtmc-v-final layout-nrow=2}
+
+![](./figures/final/RTM_xwi-54-125_novp_0524.png)
+
+![](./figures/final/RTM_xwi-54-125.png)
+
+Impedance imaging in the final inverted velocity model.
+:::
+
+# Sparsity Promoting LSRTM
+
+Model-space sparsity promoting least square migration is an iterative imaging methods that uses the Linearized Bregman algorithm with the Curvelet transform as a sparsifying transform. The algorithm is designed to use a small subset of the dataset at each iteration leading to a total imaging cost equivalent to a single RTM. We intend to show that this advanced method leads to accurate true amplitude subsurface image at a reasonable computational cost.
+The data was processed with the steps described in the Data Processing section. In addition, we added a data muting to remove all turning waves from the field data using a water velocity of 1500m/s.
+
+put refs to precon paper and splsrtm paper
+
+::: {#fig-lsrtm}
+
+![](figures/final/lsrtm_x_39.png)
+
+Impedance SPLSRTM in the final inverted velocity model.
+:::
+
+We see limited benefits of splsrtm based on this image, however, this result comes from a plain application of the existing algorithm without proper design of preconditionners. We however know that adding extra preconditionners necessary for handling field data properly will lead to improved accuracy of the subsurface and should resolve the main complexities such as the main inconformity at 4km depth.
+
+# Common image gathers
+
+
+Subsurface offset gathers have been computed using random trace estimators [ref]. This method, introduced in [Probed] is a memory frugal but accurate way to compute adjoint based subsurface images such as Reverse Time Migration [RTM] and subsurface image gathers. The aim is to shoow that we can compute accurate CIGs with a method that requires little resources (very low memory) allowing for scaling to large subsurface area and high frequencies unlike traditional CIG methods and frameworks. The data was processed as described in the Data processing section and we computed the CIGs for a [3Hz, 40Hz] frequency band with 12.5m fine grain offset sampling for a total of 241 offsets.
+
+## Checkshot gathers
+
+
+The probed subsurface offset gather shots clear evidence of un-focusing. This is a clear indication that the initial velocity model is not accurate enough to provide a good image of the subsurface. The events are not well aligned and the gathers are not well focused. This also indicates that despite good continuity, hte main reflection at 4km depth n the impedance image cannot be considered correct but only and consequence of a globally incorrect background model.
+
+
+::: {#fig-ssoc-init}
+![](./figures/cshot-init/SSO_chsot_ofs.png)
+
+Subsurface Offset Gather in the initial checkshot velocity model.
+:::
+
+## Final gathers
+
+
+Finally, we computed the subsurface offset gather using low memory trace estimation (see ...) as with the inital checkshot model. As intended, the energy is much more focused around the zero offset hinting at a more kinematically accurate model. The events are well aligned and the gathers are well focused. The events are also well aligned with the impedance image and the velocity model. This is a clear indication that the final velocity model is much more accurate than the initial model and provides a much better image of the subsurface.
+
+::: {#fig-ssoc-final}
+
+![](./figures/final/SSO_xwi_ofs_0524.png)
+
+Subsurface Offset Gather in the final velocity model.
+:::
+
+
+**Notes**:
+
+We note that the zero offset section of the probed gather is not as precise as the impedance image while they should be. We assume tht the presence of strong multiple in the data led to inaccuracies in the estimation of the probing vectors leading to worsen subsurface image. THis observation will be studied to improve the image while conserving the scalable advantages of the method.
+
+# Machine learning
+
+
+## Dataset preparation for generative AI
+
+One of the goal of the project is to evaluate the potential of new machine learning methods and in particular, the potential of generative AI to obtain background velocity model from simple information. In this case, the intended goal is to generate velocity model for the area covered by the 32 lines from the few wells and RTMs obtained with the time migration model. At the time of this report, the method is till being developed and the RTMs and wells have been made available and ready for training a network and further finding will be reported at a later date.
+
+
+## Uncertainty quantification
+
+Ali's stuff on FWI model
+
+
+## Digital twin
+
+
+# DELIVERABLES
+
+## Agreement
+
+1. **The Contractor shall provide the following deliverables, including (but not limited to):**
+
+   - (i) A reproducible workflow for generating 2D subsurface-offset image volumes over a fine increment in subsurface offset applied to data from at least two (2) 2D lines, which will be released as open source under the MIT Licence at Georgia University of Technology.
+
+[JUDI] is available under MIT license and provide all the tools necessary to reproduce the results obtained through this project. The scripts to reproduce the results are available in the [Galactic Reproducibility] repository. These script are Julia script and will require a Julia environment to be run. The scripts are well documented and provide a step-by-step guide to reproduce the results obtained in this project.
+
+   - (ii) Evidence that the workflows delivered can be scaled to 3D.
+
+[JUDI] is by design a 3D library and all the workflows presented in this project can be easily scaled to 3D. The workflows are designed to be modular and extensible, allowing users to easily add new recipes and customize existing ones. The workflows are also designed to be efficient, with recipes that are optimized for performance on modern hardware. Published results such as [gpu probe] show that the framework is readily scalable to 3D.
+
+   - (iii) Reports detailing and demonstrating the techniques applied and parameters used throughout the project in accordance with Clause 3.4 of this SOW.
+
+   - (iv) Non-proprietary access to relevant software developed as part of the SOW required for the Company to independently reproduce the results generated, along with written instructions on how to operate the software.
+
+All software developed as part of this project is available under the MIT license and can be accessed on the [Devito] and [JUDI] repositories. The software is well documented and provide a step-by-step guide to reproduce the results obtained in this project. Additonally, Woodise Energy has been given a one year access to [DevitoPro] and the recipes (cookbook, see section Software) developed during this project.
+
+   - (v) As part of a private workshop relating to the wider project, a presentation to the Company and other project participants summarising the outcomes and core findings from this SOW.
+
+2. **Data deliverables to be made in SEG-Y format with clear and concise EBCDIC headers and suitable trace and binary headers, unless agreed otherwise by both Parties.**
+
+All images and subsurface offset gathers are provided in SEG-Y format with clear and concise EBCDIC headers and suitable trace and binary headers. The SEG-Y files are available in attached archives.
+
+3. **Software deliverables to be made in either compiled or non-compiled format.**
+
+As per the agreement, all software deliverables are available in non-compiled format and can be accessed on the [Devito] and [JUDI] repositories.
+
+4. **In accordance with a Good Standing Agreement between the Company and the National Offshore Petroleum Titles Administrator (the Regulator) in Australia, a subset of the deliverables will be shared with the Regulator and eventually made public via the National Offshore Petroleum Information Management System.**
+
+All deliverables will be shared with the Regulator and made public via the National Offshore Petroleum Information Management System.
+
+## Data
+
+
+Below is the table of delivered data for the Galactic 2D project. All data made available on AWS.
+
+
+| Data    | File name |
+|:-------:|:------:|
+| Line 18 final RTM | 1 |
+| Line 18 final CIG | 1 |
+| Line 18 SPLSRTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+| Line 1 TimeMigVel RTM | 1 |
+
+: Deliverables
+
+ewrgd
+
+# References
+
+
+https://library.seg.org/doi/epub/10.1190/1.3124753
+
+
+[JUDI]: https://github.com/slimgroup/JUDI.jl
+[Galactic Reproducibility]: https://github.com/mloubout/galactic2d
+[Devito]: https://github.com/devitocodes/devito
+[DevitoPro]: https://github.com/devitocodespro/devitopro-woodside
