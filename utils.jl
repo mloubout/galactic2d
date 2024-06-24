@@ -1,4 +1,4 @@
-using LinearAlgebra, Interpolations, JUDI, SegyIO, JLD2, ImageFiltering
+using LinearAlgebra, Interpolations, JUDI, SegyIO, JLD2, ImageFiltering, Images
 
 export read_model, get_subset, nx, load_slice
 
@@ -62,9 +62,9 @@ function read_model(vp_file::String; start=1, d=12.5, oind=nothing, vals=nothing
     # Origin
     oind = isnothing(oind) ? div(size(grided_vel, 1), 10) : oind
     if Y[2] > Y[1]
-        origin = (minimum(X[oind:end]), minimum(Y[oind:end]), 0)
+        orig = (minimum(X[oind:end]), minimum(Y[oind:end]), 0)
     else
-        origin = (minimum(X[oind:end]), maximum(Y[oind:end]), 0)
+        orig = (minimum(X[oind:end]), maximum(Y[oind:end]), 0)
     end
 
     if density
@@ -75,7 +75,21 @@ function read_model(vp_file::String; start=1, d=12.5, oind=nothing, vals=nothing
     else
         model = Model(size(grided_vel'), (dx, dz), (-(oind - 1)*dx, 0.), (grided_vel').^(-2); nb=80)
     end
-    return model, origin
+    return model, orig
+end
+
+
+function resample(model, ratio)
+    newn = (size(model) .- 1) .* ratio .+ 1
+    newd = spacing(model) ./ 2
+    newo = origin(model)
+    m = imresize(model.m.data, newn)
+    if isa(model.rho, JUDI.PhysicalParameter)
+        rho = imresize(model.rho.data, newn)
+        return Model(newn, newd, newo, m, rho; nb=nbl(model))
+    else
+        return Model(newn, newd, newo, m; nb=nbl(model))
+    end
 end
 
 nx(x) = x ./ norm(x, Inf)
@@ -113,9 +127,9 @@ function load_slice(linenum, wavelet::String; t=nothing)
     return data, q
 end
 
-function get_subset(data, q, origin, idx, f0=3f0, f1=30f0; normalize=false)
-    newq = get_data(q[idx]; rel_origin=origin, project="2d")
-    newshot = get_data(data[idx]; rel_origin=origin, project="2d")
+function get_subset(data, q, orig, idx, f0=3f0, f1=30f0; normalize=false)
+    newq = get_data(q[idx]; rel_origin=orig, project="2d")
+    newshot = get_data(data[idx]; rel_origin=orig, project="2d")
     Fq = judiFilter(newq, f0, f1)
     Fd = judiFilter(newshot, f0, f1)
     newq = Fq * newq

@@ -45,7 +45,7 @@ function obj(x)
         inds = popn()
     end
 
-    dobs, qf = get_subset(data, q, origin, inds, 5f0, 40f0)
+    dobs, qf = get_subset(data, q, origin, inds, 10f0, 50f0)
     DG = judiTimeGain(dobs.geometry, 1) # t^2
     Ml = judiDataMute(qf.geometry, dobs.geometry)
 
@@ -55,14 +55,12 @@ function obj(x)
     I = inv(judiIllumination(J; mode="uv", k=1))
 
     if norm(dm) > 0
-        residual = Ml*(J*dm - DG*dobs)
+        residual = Ml*(J*Tm*dm - DG*dobs)
     else
         residual = -(Ml*DG*dobs)
     end
     # grad
     G = Tm*I*(J'*Ml'*residual)
-    g_scale == 0 && (global g_scale = .05f0/norm(G, Inf))
-    G .*= g_scale
     gfull = PhysicalParameter(model.n, model.d, model.o, zeros(Float32, model.n))
     gfull .+= G
     return .5f0*norm(residual)^2, gfull[:]
@@ -87,6 +85,6 @@ end
 dm0 = zeros(Float32, prod(model.n))
 
 # Bregman
-bregopt = bregman_options(maxIter=niter, verbose=2, quantile=.95, alpha=1, TD=C,
+bregopt = bregman_options(maxIter=niter, verbose=2, quantile=.98, alpha=1, TD=C,
                           antichatter=false, spg=true, reset_lambda=10)
 solb = bregman(obj, dm0, bregopt; callback=callback);
