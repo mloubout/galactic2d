@@ -35,13 +35,13 @@ The following objectives and deliverables were agreed upon in the Statement of W
 
 ## Data
 
-The data consist of 32 lines. We processed line 18 that was decided to be the line of interest. Line 21 was the secondary objective but wasn not processed in time.
+The data consist of 32 lines. We processed line 18 that was decided to be the line of interest. Line 21 was the secondary objective but was not processed in time.
 
 # Data processing
 
-We applied standard  data processing workflow in order to guarantee quality images of the subsurface. Those processing steps are generally  considered standard for any field data processing workflow. The  survey consists of 32 sailines available in one SEG-Y file per line. In addition, some legacy stacks and models were provided:
+We applied standard  data processing workflow in order to guarantee quality images of the subsurface. Those processing steps are generally  considered standard for any field data processing workflow. The  survey consists of 32 sail-lines available in one SEG-Y file per line. In addition, some legacy stacks and models were provided:
 
-- A pres-stack time-migration model for each line,. We observed that the header of those models is likely to be incorrect as the time-sampling had to be doubled to obtain acceptable time-to-depth converted models. Those models were only use as initial migration model to get an idea of the subsurface but were later on replaced by models derived from wells and horizons.
+- A pre-stack time-migration model for each line,. We observed that the header of those models is likely to be incorrect as the time-sampling had to be doubled to obtain acceptable time-to-depth converted models. Those models were only use as initial migration model to get an idea of the subsurface but were later on replaced by models derived from wells and horizons.
 
 - Time-grated stacks. The dataset came with some migrated lines. Those migrated images were however not used and instead RTMs were generated with the time-migration velocity models. Despite inaccurate travel times, those RTMs are higher quality in term of focusing and horizon continuity for the given velocities. We provide those migrated images for references that were intended to be used to train generative networks.
 
@@ -149,8 +149,12 @@ Impedance SPLSRTM in the final inverted velocity model.
 
 We see limited benefits of splsrtm based on this image, however, this result comes from a plain application of the existing algorithm without proper design of preconditionners. We however know that adding extra preconditionners necessary for handling field data properly will lead to improved accuracy of the subsurface and should resolve the main complexities such as the main inconformity at 4km depth.
 
-# Common image gathers
 
+**Notes on source estimation**
+
+The initial goal was to integrate source estimation into the SPLSRTM algorithm based on the exisiting work in [@se-splsrtm]. However, our experiemnt showed that this algorithm will require significant rework to handle data with complex source signature and strong, shallow, ocean bottom multiples. THis method currently tries to estimate the source based on the full shot record and needs to be refined to smaller subset of the data for more robust estimation.
+
+# Subsurface offset image gathers
 
 Subsurface offset gathers have been computed using random trace estimators [@timeprobe]. This method, introduced in [Probed] is a memory frugal but accurate way to compute adjoint based subsurface images such as Reverse Time Migration [RTM] and subsurface image gathers. The aim is to shoow that we can compute accurate CIGs with a method that requires little resources (very low memory) allowing for scaling to large subsurface area and high frequencies unlike traditional CIG methods and frameworks. The data was processed as described in the Data processing section and we computed the CIGs for a [3Hz, 40Hz] frequency band with 12.5m fine grain offset sampling for a total of 241 offsets.
 
