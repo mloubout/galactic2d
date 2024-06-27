@@ -72,12 +72,14 @@ The following objectives and deliverables were agreed upon in the Statement of W
 
 ## Contributions
 
+**Principal Investigator**: Mathias Louboutin
+
 **DevitoCodes**: Mathias Louboutin, Fabio Luporini, Gerard Gorman
 
 - Impedance imaging of Line 18
 - Subsurface offset gathers for Line 18
 
-**Georgia Institute of Technology**: Felix J. Herrmann
+**Georgia Institute of Technology**: Mathias Louboutin, Felix J. Herrmann
 
 - Sparsity promoting least-squares migrations (SPLSRTM) of line 18
 - Migration of 20 lines with provided time-migration models
@@ -409,7 +411,7 @@ Below is the table of delivered data for the Phase 2b of the Galactic 2D project
 
 \newpage
 
-### References
+# References
 
 ::: {#refs}
 :::
