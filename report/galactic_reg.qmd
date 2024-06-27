@@ -8,7 +8,17 @@ copyright:
   holder: Devito Codes, Ltd
   year: 2024
 license: MIT
+format:
+  pdf:
+    documentclass: scrartcl
+    toc: true
+    lof: true
+    lot: true
+    number-sections: true
+    colorlinks: true
 ---
+
+{{< pagebreak >}}
 
 # Introduction
 
@@ -60,7 +70,7 @@ The wavelet provided with the dataset was used for all imaging procedures. The w
 The dataset was truncated to 9 seconds recording out of the 10 second of available data due to deblending artifacts in the tail end of the shot record for over 50% of the shots in ine 18. We show in @fig-data the deblending artifact at the tail end of the shot record for illustration.
 
 
-::: {#fig-rtmc-init layout-nrow=2}
+::: {#fig-data layout-nrow=2}
 
 ![](./figures/data-arti.png)
 
@@ -100,15 +110,15 @@ Impedance imaging and overlapped with the initial checkshot velocity model.
 :::
 
 
-Base on these inital results, it was clear the multiple steps are necessary for the processing of this dataset.
+Base on these initial results, it was clear the multiple steps are necessary for the processing of this dataset.
 
 - 1) First an end-to-end FWI inversion of the velocity model is necessary to provide a more accurate background model. A first iteration of FWI was performed based on an acoustic isotropic model. While not very accurate, the resulting velocity should prove much better insight and lead to more accurate and interpretable images of the subsurface.
 
 - 2) Due to the shallow water environment, strong multiples are present in the datasets.  All work was done incorporating those multiples into the inversion (FWI) and imaging (RT, CIGs) processes. However, in order to obtain high quality images, future processing may require either multiple elimination workflows (i.e. SRME/, REPSI, ...) or more complex physics, namely elastic isotopic, to accurately model the shallow ocean bottom reflections and multiples.
 
-# Final velocity model
+## Final checkshot velocity model
 
-The initial model used for this final result is once again obtained from the checkshot and horizons, howver modification have been made to be less reliant on the known inaccurate time migration images. 
+The initial model used for this final result is once again obtained from the checkshot and horizons, however modification have been made to be less reliant on the known inaccurate time migration images. 
 
 The subsurface impedance image from this initial checkshot model is shown below. The continuity and sharpness of the events imaged in the subsurface are clearly improved compared to the model at the start of the project. The main event at 4km depth is continuous and well resolved. However, the shallow section lacks focusing and continuity and the deeper part (below 4km) os very noisy.
 
@@ -121,8 +131,9 @@ The subsurface impedance image from this initial checkshot model is shown below.
 Impedance imaging in the final checkshot velocity model.
 :::
 
+## Final velocity model
 
-We now show the image obtained with the final FWI velocity model and make two main observations; First, the main horizon at 4km depth is more focused and continuous for the left 40km of the model. The string reflectors at 1km and 1.5km are now continuous accross the full model and the faults at 35km and 60km are very well resolved. On another hand, we observe and overall decrease in focusing and an increase in artifacts in the image. In particular, the horizon at 4km depth losses structure starting at 40km and we observe a lot of ringing artifact between 70km and 90km likely to be multiple-related.
+We now show the image obtained with the final FWI velocity model and make two main observations; First, the main horizon at 4km depth is more focused and continuous for the left 40km of the model. The string reflectors at 1km and 1.5km are now continuous across the full model and the faults at 35km and 60km are very well resolved. On another hand, we observe and overall decrease in focusing and an increase in artifacts in the image. In particular, the horizon at 4km depth losses structure starting at 40km and we observe a lot of ringing artifact between 70km and 90km likely to be multiple-related.
 
 
 ::: {#fig-rtmc-v-final layout-nrow=2}
@@ -174,7 +185,7 @@ Subsurface Offset Gather in the initial checkshot velocity model.
 
 ## Final gathers
 
-Finally, we computed the subsurface offset gather using low memory trace estimation (see ...) as with the inital checkshot model. As intended, the energy is much more focused around the zero offset hinting at a more kinematically accurate model. The events are well aligned and the gathers are well focused. The events are also well aligned with the impedance image and the velocity model. This is a clear indication that the final velocity model is much more accurate than the initial model and provides a much better image of the subsurface.
+Finally, we computed the subsurface offset gather using low memory trace estimation (see ...) as with the initial checkshot model. As intended, the energy is much more focused around the zero offset hinting at a more kinematically accurate model. The events are well aligned and the gathers are well focused. The events are also well aligned with the impedance image and the velocity model. This is a clear indication that the final velocity model is much more accurate than the initial model and provides a much better image of the subsurface.
 
 ::: {#fig-ssoc-final}
 
@@ -190,14 +201,13 @@ We note that the zero offset section of the probed gather is not as precise as t
 
 # Machine learning
 
-
 **Dataset preparation for generative AI**
 
 One of the goal of the project is to evaluate the potential of new machine learning methods and in particular, the potential of generative AI to obtain background velocity model from simple information. In this case, the intended goal is to generate velocity model for the area covered by the 32 lines from the few wells and RTMs obtained with the time migration model. At the time of this report, the method is till being developed and the RTMs and wells have been made available and ready for training a network and further finding will be reported at a later date.
 
 **Uncertainty quatification**
 
-A second objective was to use modern machine learning techniques to compute uncertainties for the inverted velocity models and subsurface images. However, due to the complexity and size of the model, the direct application of more academic algorithms was not immediately possible due to computational resources and lack of access to training data. One of the avenue we intend to explore in the future is to exploit work that consider variations around a given model (i.e an FWI final model) to compute uncertainty based on the variations of the corresponding RTMs [@siahkoohi2021dbif;@yin2022ML4SEISMICavc]. We intend to evaluate such techniques using the velocity model used for the final images.
+A second objective was to use modern machine learning techniques to compute uncertainties for the inverted velocity models and subsurface images. However, due to the complexity and size of the model, the direct application of more academic algorithms was not immediately possible due to computational resources and lack of access to training data. One of the avenue we intend to explore in the future is to exploit work that consider variations around a given model (i.e an FWI final model) to compute uncertainty based on the variations of the corresponding RTMs [@siahkoohi2021dbif;@yin2022ML4SEISMICavc]. We intend to evaluate such techniques using the velocity model used for the final images. A second method we intend to explore is WISE [@yin2023wise], a very recent metho based on subsurface offset gathers. This method is however in its infancy and will require generation of proper dataset and training to be used for this dataset.
 
 
 # DELIVERABLES
@@ -218,7 +228,7 @@ A second objective was to use modern machine learning techniques to compute unce
 
    - (iv) Non-proprietary access to relevant software developed as part of the SOW required for the Company to independently reproduce the results generated, along with written instructions on how to operate the software.
 
-All software developed as part of this project is available under the MIT license and can be accessed on the [Devito] and [JUDI] repositories. The software is well documented and provide a step-by-step guide to reproduce the results obtained in this project. Additonally, Woodise Energy has been given a one year access to [DevitoPro] and the recipes (cookbook, see section Software) developed during this project.
+All software developed as part of this project is available under the MIT license and can be accessed on the [Devito] and [JUDI] repositories. The software is well documented and provide a step-by-step guide to reproduce the results obtained in this project. Additonally, Woodside Energy has been given a one year access to [DevitoPro] and the recipes developed during this project.
 
    - (v) As part of a private workshop relating to the wider project, a presentation to the Company and other project participants summarising the outcomes and core findings from this SOW.
 
@@ -244,7 +254,7 @@ Below is the table of delivered data for the Galactic 2D project. All data made 
 |:-------:|:------:|
 | Line 18 CSHOT RTM | W22GAL_LINE18_FTPreSRTM_RTM_CSHOT.segy |
 | Line 18 final RTM | W22GAL_LINE18_FTPreSRTM_RTM_XWI.segy |
-| Line 18 final CIG | W22GAL_LINE18_FTPreSRTM_RTM_XWI.segy |
+| Line 18 final CIG |W22GAL_LINE18_FTPreSRTM_SSCIG.segy |
 | Line 18 SPLSRTM | W22GAL_LINE18_FTPreLSSRTM_Curvelet.segy |
 | Line 01 TimeMigVel RTM | W22GAL_LINE01_FTPreSRTM_RTM.segy |
 | Line 05 TimeMigVel RTM | W22GAL_LINE05_FTPreSRTM_RTM.segy |
