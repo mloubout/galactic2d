@@ -59,3 +59,30 @@ eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1111/1365-2478.13021},
 abstract = {ABSTRACT Least-squares reverse-time migration is well known for its capability to generate artefact-free true-amplitude subsurface images through fitting observed data in the least-squares sense. However, when applied to realistic imaging problems, this approach is faced with issues related to overfitting and excessive computational costs induced by many wave-equation solves. The fact that the source function is unknown complicates this situation even further. Motivated by recent results in stochastic optimization and transform-domain sparsity promotion, we demonstrate that the computational costs of inversion can be reduced significantly while avoiding imaging artefacts and restoring amplitudes. While powerful, these new approaches do require accurate information on the source-time function, which is often lacking. Without this information, the imaging quality deteriorates rapidly. We address this issue by presenting an approach where the source-time function is estimated on the fly through a technique known as variable projection. Aside from introducing negligible computational overhead, the proposed method is shown to perform well on imaging problems with noisy data and problems that involve complex settings such as salt. In either case, the presented method produces high-resolution high-amplitude fidelity images including an estimate for the source-time function. In addition, due to its use of stochastic optimization, we arrive at these images at roughly one to two times the cost of conventional reverse-time migration involving all data.},
 year = {2020}
 }
+
+
+@article {siahkoohi2021dbif,
+	title = {Deep Bayesian inference for seismic imaging with tasks},
+	journal = {Geophysics},
+	volume = {87},
+	number = {5},
+	year = {2022},
+	note = {(Geophysics)},
+	month = {07},
+	pages = {281-302},
+	abstract = {We propose to use techniques from Bayesian inference and deep neural networks to translate uncertainty in seismic imaging to uncertainty in tasks performed on the image, such as horizon tracking. Seismic imaging is an ill-posed inverse problem because of unavoidable bandwidth and aperture limitations, which that is hampered by the presence of noise and linearization errors. Many regularization methods, such as transform-domain sparsity promotion, have been designed to deal with the adverse effects of these errors, however, these methods run the risk of biasing the solution and do not provide information on uncertainty in the image space and how this uncertainty impacts certain tasks on the image. A systematic approach is proposed to translate uncertainty due to noise in the data to confidence intervals of automatically tracked horizons in the image. The uncertainty is characterized by a convolutional neural network (CNN) and to assess these uncertainties, samples are drawn from the posterior distribution of the CNN weights, used to parameterize the image. Compared to traditional priors, in the literature it is argued that these CNNs introduce a flexible inductive bias that is a surprisingly good fit for many diverse domains in imaging. The method of stochastic gradient Langevin dynamics is employed to sample from the posterior distribution. This method is designed to handle large scale Bayesian inference problems with computationally expensive forward operators as in seismic imaging. Aside from offering a robust alternative to maximum a posteriori estimate that is prone to overfitting, access to these samples allow us to translate uncertainty in the image, due to noise in the data, to uncertainty on the tracked horizons. For instance, it admits estimates for the pointwise standard deviation on the image and for confidence intervals on its automatically tracked horizons.},
+	keywords = {deep priors, horizon tracking, seismic imaging, Uncertainty quantification},
+	doi = {10.1190/geo2021-0666.1},
+	url = {https://slim.gatech.edu/Publications/Public/Journals/Geophysics/2022/siahkoohi2021dbif/paper.html},
+	author = {Ali Siahkoohi and Gabrio Rizzuti and Felix J. Herrmann}
+}
+
+@presentation {yin2022ML4SEISMICavc,
+	title = {Amortized velocity continuation with Fourier neural operators},
+	year = {2022},
+	month = {11},
+	abstract = {Velocity continuation aims to map the migration image using one background model to the image using another background model. It is of great importance to quantify the uncertainty in seismic imaging result from various background models. With Fourier neural operators as a learned surrogate, this continuation from a given background model to an unseen background model can be quite accurately estimated with near-zero cost. However, the limitation of the prior art is that the input background model and the survey area are assumed to be fixed. The main contribution of this work is to extend the Fourier neural operator surrogate to be amortized over different given background models and survey areas. We verify the effectiveness of our learned surrogates by a realistic example on different areas of Parihaka dataset against different background models.},
+	keywords = {Fourier neural operators, ML4SEISMIC, SLIM, Uncertainty quantification, velocity continuation},
+	url = {https://slim.gatech.edu/Publications/Public/Conferences/ML4SEISMIC/2022/yin2022ML4SEISMICavc/index.html},
+	author = {Ali Siahkoohi and Ziyi Yin and Mathias Louboutin and Felix J. Herrmann}
+}
