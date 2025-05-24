@@ -1,6 +1,21 @@
 using LinearAlgebra, Interpolations, JUDI, SegyIO, JLD2, ImageFiltering, Images
 
-export read_model, get_subset, nx, load_slice
+export read_model, get_subset, nx, load_slice, get_orig
+
+
+function get_orig(vp, vp_file, dx=12.5, oind=nothing)
+    segvp = segy_read(vp_file)
+    X = get_header(segvp, "CDPX")
+    Y = get_header(segvp, "CDPY")
+    oind = isnothing(oind) ? div(size(vp, 1), 10) : oind
+    if Y[2] > Y[1]
+        orig = (minimum(X[oind:end]), minimum(Y[oind:end]), 0)
+    else
+        orig = (minimum(X[oind:end]), maximum(Y[oind:end]), 0)
+    end
+    return orig, -(oind - 1)*dx
+end
+
 
 function read_model(vp_file::String; start=1, d=12.5, oind=nothing, vals=nothing, density=false)
     T = Float32
@@ -130,6 +145,9 @@ end
 function get_subset(data, q, orig, idx, f0=3f0, f1=30f0; normalize=false)
     newq = get_data(q[idx]; rel_origin=orig, project="2d")
     newshot = get_data(data[idx]; rel_origin=orig, project="2d")
+    if isnothing(f0) || isnothing(f1)
+        return newshot, newq
+    end
     Fq = judiFilter(newq, f0, f1)
     Fd = judiFilter(newshot, f0, f1)
     newq = Fq * newq

@@ -5,18 +5,20 @@ close("all")
 
 include("utils.jl")
 
-fmax = 40
+# fmax = 45
 linenum = 18
 data_path = "/data/galactic2D/"
-figpath = "./images/rtm-$(fmax)-2405"
+# figpath = "./images/rtm-$(fmax)-2405"
+figpath = "./images/rtm-2405"
 
 model, origin  = read_model("$(data_path)W22GAL_LINE$(linenum)_FTPreSTM_MigVel.segy")
 segyvel = "$(data_path)galactic-CP00054-Vp-0524.sgy"
 
 rtm_start = "$(data_path)rtm_line_18_0524_xwi_start_125.bin"
-rtm_xwi_125 = "$(data_path)rtm_line_18_0524_xwi_54_125_$(fmax).bin"
+# rtm_xwi_125 = "$(data_path)rtm_line_18_0524_xwi_54_125_$(fmax).bin"
+rtm_xwi_125 = "$(data_path)rtm_line_18_0524_xwi_54_125.bin"
 
-cmap = "cet_CET_L1"
+cmap = "cet_CET_L2"
 vcmap = "cet_rainbow4"
 perc = 95
 vp_max = 5.0
@@ -30,7 +32,7 @@ for (resname, name) in zip(rtms, names)
     @info name
     res = deserialize(resname)
     rtm, Ilu, Ilv, spacing = res.rtm, res.Ilu, res.Ilv, reverse(res.spacing)
-    Il = Ilv
+    Il = Ilu.^(0.5f0) .* Ilv
 
     vp = res.m.^(-.5)
     wb = find_water_bottom(res.m, 1.6^(-2))
