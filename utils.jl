@@ -109,34 +109,44 @@ end
 
 nx(x) = x ./ norm(x, Inf)
 
-function load_slice(linenum, wavelet::String; t=nothing)
+function load_slice(linenum, data_path, segy_key, wavelet_path::String; t=nothing, t0rec=nothing, t0src=-14f0, src_depthkey="SourceDepth")
     # Data
-    if isfile("$(linenum).jld2")
-        @load "$(linenum).jld2" shots
+    if isfile("$(data_path)$(linenum)$(segy_key).jld2")
+        @load "$(data_path)$(linenum)$(segy_key).jld2" shots
     else
-        shots = segy_scan(data_path, "W22GAL$(linenum)", ["GroupX", "GroupY", "dt", "ns", "RecGroupElevation", "SourceDepth"]);
-        @save "$(linenum).jld2" shots
+        shots = segy_scan(data_path, segy_key, ["GroupX", "GroupY", "dt", "ns", "RecGroupElevation", src_depthkey]);
+        @save "$(data_path)$(linenum)$(segy_key).jld2" shots
     end
-    data = judiVector(shots; segy_depth_key="RecGroupElevation", t=t)
-    
+    data = judiVector(shots; segy_depth_key="RecGroupElevation", t=t, t0=t0rec)
+
     # Source
     # Set up wavelet
-    src_geometry = Geometry(shots; key = "source", segy_depth_key = "SourceDepth", t=t, t0=-14f0)
-    wavelet = segy_read(wavelet)
+    src_geometry = Geometry(shots; key = "source", segy_depth_key=src_depthkey, t=t, t0=t0src)
+    wavelet = segy_read(wavelet_path)
     dtw = get_header(wavelet, "dt")[1]/1000
     nsw = get_header(wavelet, "ns")[1]
     twavelet = 0:dtw:((nsw-1)*dtw)
 
     dtd = get_dt(src_geometry, 1)
     newt = 0:dtd:twavelet[end]
-    
-    src_data = Float32.(wavelet.data)[:]
+    @info "Input wavelet with dt=$(dtw), nt=$(nsw), data sampling=$(dtd)"
+
+    # Hack for scube wavelet
+    if contains(wavelet_path, "Vendor")
+        i0 = Int(nsw / 2) - 100
+        src_data = Float32.(wavelet.data)[i0:end]
+        twavelet = 0:dtw:((length(src_data)-1)*dtw)
+    else
+        src_data = Float32.(wavelet.data)[:]
+    end
     
     itp = LinearInterpolation(twavelet, src_data, extrapolation_bc=Line())
     itq = itp(newt)
-    wavelet_q = zeros(Float32, get_nt(src_geometry, 1), 1)
-    wavelet_q[1:length(itq)] .= itq
-    
+    ntd = get_nt(src_geometry, 1)
+    wavelet_q = zeros(Float32, ntd, 1)
+    ntq = min(ntd, length(itq))
+    wavelet_q[1:ntq] .= itq[1:ntq]
+
     q = -diff(judiVector(src_geometry, wavelet_q), dims=1)
 
     return data, q
